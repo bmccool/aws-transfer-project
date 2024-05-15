@@ -3,5 +3,11 @@
     "us-east-2a",
     "us-east-2b",
     "us-east-2c"
-  ]
+  ],
+  "availability-zones:account=104168354287:region=us-east-2": [
+    "us-east-2a",
+    "us-east-2b",
+    "us-east-2c"
+  ],
+  "userPublicKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC74iX1wDiML3Srhs89oZ+D0jCEJk4193TZObzxf+vIpxD5RjM//GrsfGkX8ypYAwQfRzPwpdc4fjiUWSHhHsDyJlrsp9nhKOnHrLto901O1gl/yKpMK6EQvz0ODVO05R03y20f4VVdIzoCD/R945l6U6hmSpTjl3XwgDmjfbQpKQ2cYANCEGoQcq5XbADlZHVYbNuYFdRl5mseicX+V6gExMW234/PrH5puMeR55+pjzTj1Dr3+Ve4he3UArQ/G1SLnJ+WL1ZdnWLDmuLljMHdguWJDBADWccYVt4e5lfxPjt9qbGU2YBpkFF9VzESOC29WlhTPtwRgaNHxcTQ2Vb+cPOo1B5M4Ha3mUA0c8C2dz8/VISWHjBg/u8+mztFPBSlMl78ZaKunjMz56RmSAfnWMNIcw73wpGdUC8f+LzosXZv4EZzxJrctVL648IX43BTOj9G7u1rIx85E+axZ0p/YidP7uZQ082cFGaVj+1I6R9Vgr/RvhWqYJlx6H/atHU="
 }

@@ -74,3 +74,7 @@ sftp> ls
 example_file
 sftp>
 ```
+
+
+s-738ca918bb4b4fb4b https://us-east-2.console.aws.amazon.com/transfer/home?region=us-east-2#/servers/s-738ca918bb4b4fb4b
+Identity provider type = Custom - AWS Lambda

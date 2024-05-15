@@ -6,6 +6,7 @@ import {
   aws_logs as logs,
   aws_cloudwatch as cw,
   aws_transfer as transfer,
+  aws_lambda as lambda
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
@@ -85,6 +86,13 @@ export class SftpServerStack extends Stack {
       domain: 'vpc',
     }));
 
+    // Create the lambda to be used as the identity provider
+    const identityProviderLambda = new lambda.Function(this, 'IdentityProviderLambda', {
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: 'lambda_function.lambda_handler',
+      code: lambda.Code.fromAsset('lambda/identity-provider'),
+    });
+
     const server = new transfer.CfnServer(this, 'SFTPServer', {
       endpointDetails: {
         securityGroupIds: [sg.securityGroupId],
@@ -92,11 +100,16 @@ export class SftpServerStack extends Stack {
         subnetIds: vpc.publicSubnets.map((subnet) => subnet.subnetId),
         addressAllocationIds: eips.map((eip) => eip.attrAllocationId),
       },
-      identityProviderType: 'SERVICE_MANAGED',
+      identityProviderType: 'AWS_LAMBDA',
       endpointType: 'VPC',
-      loggingRole: cloudWatchLoggingRole.roleArn,
+      loggingRole: cloudWatchLoggingRole.roleArn, // Don't have one in original POC
       protocols: ['SFTP'],
       domain: 'S3',
+      identityProviderDetails: {
+        function: identityProviderLambda.functionArn,
+        sftpAuthenticationMethods: "PASSWORD",
+
+      },
     });
 
     // Output Server Endpoint access where clients can connect
