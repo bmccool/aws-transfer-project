@@ -139,16 +139,6 @@ export class SftpServerStack extends Stack {
       retention: logs.RetentionDays.ONE_MONTH,
     });
 
-    // Configure user which has access to the S3 bucket
-    // https://docs.aws.amazon.com/transfer/latest/userguide/service-managed-users.html
-    new transfer.CfnUser(this, 'SFTPUser', {
-      serverId: server.attrServerId,
-      homeDirectory: `/${props.dataBucket.bucketName}/incoming-data`,
-      role: sftpUserAccessRole.roleArn,
-      userName: props.userName,
-      sshPublicKeys: props.userPublicKeys,
-    });
-
     // Metric filter for recognizing two types of errors in the SFTP logs
     const metricFilter = new logs.MetricFilter(this, 'MetricFilter', {
       logGroup,
