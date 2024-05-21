@@ -12,14 +12,6 @@ import { Construct } from 'constructs';
 
 /** Properties required to setup the SFTP server. */
 export interface SftpServerStackProps extends StackProps {
-  /** User name for the default SFTP user.
-   * @example 'sftp-user'
-   */
-  userName: string;
-
-  /** The public key of the SFTP user. */
-  userPublicKeys: string[];
-
   /** IP addresses that are allowed to connect to the SFTP server.
    * @default All IPV4 is allowed.
    */
@@ -65,6 +57,7 @@ export class SftpServerStack extends Stack {
     });
 
     // Security group for restricting incoming traffic to specific IP addresses
+    // At the moment, all IPV4 is allowed, but we may want to restrict this in the future
     const sg = new ec2.SecurityGroup(this, 'SftpServerSG', {
       vpc,
       allowAllOutbound: false,
@@ -93,23 +86,25 @@ export class SftpServerStack extends Stack {
       code: lambda.Code.fromAsset('lambda/identity-provider'),
     });
 
+    // Add resource-based policy to the lambda
+    const principal = new iam.ServicePrincipal('transfer.amazonaws.com');
+    identityProviderLambda.grantInvoke(principal);
+
+    // Create the transfer server
     const server = new transfer.CfnServer(this, 'SFTPServer', {
-      endpointDetails: {
-        securityGroupIds: [sg.securityGroupId],
-        vpcId: vpc.vpcId,
-        subnetIds: vpc.publicSubnets.map((subnet) => subnet.subnetId),
-        addressAllocationIds: eips.map((eip) => eip.attrAllocationId),
-      },
       identityProviderType: 'AWS_LAMBDA',
-      endpointType: 'VPC',
-      loggingRole: cloudWatchLoggingRole.roleArn, // Don't have one in original POC
+      endpointType: 'PUBLIC',
+      loggingRole: cloudWatchLoggingRole.roleArn,
       protocols: ['SFTP'],
       domain: 'S3',
       identityProviderDetails: {
         function: identityProviderLambda.functionArn,
         sftpAuthenticationMethods: "PASSWORD",
-
       },
+      s3StorageOptions: {
+        directoryListingOptimization: 'ENABLED',
+      },
+      securityPolicyName: "TransferSecurityPolicy-2018-11", // Need this policy to allow older ciphers required by the cameras
     });
 
     // Output Server Endpoint access where clients can connect
@@ -118,13 +113,14 @@ export class SftpServerStack extends Stack {
       value: `${server.attrServerId}.server.transfer.${this.region}.amazonaws.com`,
     });
 
-    // Allow SFTP user to write the S3 bucket
+    // This policy allows access the S3 bucket
     const sftpAccessPolicy = new iam.ManagedPolicy(this, 'SftpAccessPolicy', {
       managedPolicyName: 'SftpAccessPolicy',
       description: 'SFTP access policy',
     });
     props.dataBucket.grantReadWrite(sftpAccessPolicy);
 
+    // This role is granted upon successful authentication with lambda function
     const sftpUserAccessRole = new iam.Role(this, 'SftpAccessRole', {
       assumedBy: new iam.ServicePrincipal('transfer.amazonaws.com'),
       roleName: 'SftpAccessRole',
@@ -133,6 +129,7 @@ export class SftpServerStack extends Stack {
       ],
     });
 
+    // Create log group for the transfer server
     const logGroup = new logs.LogGroup(this, 'SftpLogGroup', {
       logGroupName: `/aws/transfer/${server.attrServerId}`,
       removalPolicy: RemovalPolicy.DESTROY,
@@ -157,7 +154,5 @@ export class SftpServerStack extends Stack {
       evaluationPeriods: 5,
       datapointsToAlarm: 1,
     });
-
-    // TODO Add alarm action to notify administrators or perform other actions
   }
 }

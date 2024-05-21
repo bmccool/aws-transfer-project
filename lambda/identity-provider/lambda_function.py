@@ -11,11 +11,13 @@ def lambda_handler(event, context):
     homeDirectoryDetails = [
       {
         'Entry': '/',
-        'Target': '/ovc-video-test'
+        'Target': '/sftp-server-data-bucket-654654585293-us-east-2'
       }
     ]
     response = {
-      'Role': 'arn:aws:iam::104168354287:role/aws-video-transfer-role', # The user will be authenticated if and only if the Role field is not blank
+      # BAM: This needs to be the ARN of the role the user will assume.  The account ID number needs to be matched to what our account ID is.
+      # The role needs to have a permission policy that allows the user Limited: Read, List, Permissions management, Write to S3 bucket
+      'Role': 'arn:aws:iam::654654585293:role/SftpAccessRole', # The user will be authenticated if and only if the Role field is not blank
       'HomeDirectoryDetails': json.dumps(homeDirectoryDetails),
       'HomeDirectoryType': "LOGICAL"
     }
@@ -35,4 +37,5 @@ def lambda_handler(event, context):
     print("Wrong Server or username")
     response = {}
 
+  print("Response: {}".format(response))
   return response

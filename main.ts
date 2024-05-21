@@ -15,43 +15,20 @@ const props: cdk.StackProps = {
 
 const app = new cdk.App();
 
-// Use CDK Context to get configuration variables
-// https://docs.aws.amazon.com/cdk/v2/guide/context.html
-const publicKeysContext = app.node.tryGetContext('userPublicKeys') as string | undefined;
-if (!publicKeysContext) {
-  console.error('Parameter userPublicKeys missing');
-}
-const allowedIps = app.node.tryGetContext('allowedIps') as string | undefined;
-
+// CREATE INCOMING DATASTACK DEV
 const bucketStack = new cdk.Stack(app, 'IncomingDataStack-dev', props);
 const bucket = new s3.Bucket(bucketStack, 'IncomingDataBucket', {
   blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
   bucketName: `sftp-server-data-bucket-${props.env?.account}-${props.env?.region}`,
-  encryption: s3.BucketEncryption.KMS_MANAGED,
+  encryption: s3.BucketEncryption.S3_MANAGED,
   enforceSSL: true,
-  // Do not use for production!
-  removalPolicy: cdk.RemovalPolicy.DESTROY,
+  removalPolicy: cdk.RemovalPolicy.RETAIN,
 });
 
-const userPublicKeys = publicKeysContext ? publicKeysContext.split(',') : [];
-
-// Different properties for dev/test environment
-const sftpPropsDev: SftpServerStackProps = {
-  userName: 'sftp-user-dev',
-  userPublicKeys,
-  dataBucket: bucket,
-  ...props,
-};
-
-// In production we want to limit allowed IPs
 const sftpProps: SftpServerStackProps = {
-  userName: 'sftp-user',
-  userPublicKeys,
-  allowedIps: allowedIps ? allowedIps.split(',') : undefined,
   dataBucket: bucket,
   ...props,
 };
 
-//new SftpServerStack(app, 'SftpServerStack-dev', sftpPropsDev);
-
+// CREATING SFTP SERVER STACK PROD
 new SftpServerStack(app, 'SftpServerStack-prod', sftpProps);
